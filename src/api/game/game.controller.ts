@@ -19,7 +19,7 @@ export const importGame: RequestHandler = async (req, res) => {
   }
 }
 
-export const getGames: RequestHandler = async (req, res) => {
+export const getAllGames: RequestHandler = async (req, res) => {
   try {
     const games = await gameService.getAllGames()
     res.json(games)
