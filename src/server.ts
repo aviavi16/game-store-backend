@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser'
 import loggerService from './services/logger.service'
 import { connectToDb } from './services/db.service'
 import { gameRoutes } from './api/game/game.routes'
+import path from 'path';
 
 
 const app = express()
@@ -13,7 +14,8 @@ const corsOptions = {
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'http://localhost:5173',
-    'http://127.0.0.1:5173'
+    'http://127.0.0.1:5173',
+    'https://game-store-front.onrender.com',
   ],
   credentials: true,
 }
@@ -27,6 +29,10 @@ app.use(express.static('public'))
 app.use('/api/game', gameRoutes)
 
 const PORT = process.env.PORT || 3030
+
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve('public', 'index.html'))
+})
 
 async function startServer() {
   try {
