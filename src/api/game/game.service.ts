@@ -2,6 +2,7 @@ import { getCollection } from '../../services/db.service'
 import { fetchImageUrl } from '../../services/fetchImageUrl'
 import loggerService from '../../services/logger.service'
 import { fetchBggGameData } from '../../services/bgg.service'
+import { fetchPhilibertImage } from '../../services/philibert.service'
 
 export const gameService = {
   importGame,
@@ -12,9 +13,28 @@ export const gameService = {
 export async function importGame(name: string) {
   let description = ''
   let source = 'ai-generated'
+  const fallbackImage = await fetchPhilibertImage(name)
+  if (fallbackImage) {
+    loggerService.info(`🛍️ Philibert image used for "${name}": ${fallbackImage}`)
+  } else {
+    loggerService.warn(`⚠️ No Philibert image found for "${name}"`)
+  }
+  
+  const googleImage = await fetchImageUrl(name)
+  if (googleImage) {
+    loggerService.info(`📸 Google image used for "${name}": ${googleImage}`)
+  } else {
+    loggerService.warn(`⚠️ No Google image found for "${name}"`)
+  }
 
-  const imageUrl = await fetchImageUrl(name)
+  const imageUrl = fallbackImage || googleImage
+
+  if (!imageUrl) {
+    loggerService.error(`❌ Failed to fetch any image for "${name}" from both Philibert and Google`)
+  }
+
   let bggData = null
+
   try {
     bggData = await fetchBggGameData(name)
     if (bggData) {
@@ -42,6 +62,7 @@ export async function importGame(name: string) {
     description,
     description_Heb: null,
     imageUrl,
+    imageUrl_Store: fallbackImage || null,
     source,
     createdAt,
     createdAtTimestamp: now.getTime(),
