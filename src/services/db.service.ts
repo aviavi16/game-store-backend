@@ -1,6 +1,6 @@
 import { MongoClient, Db } from 'mongodb'
 import { config } from '../config/config'
-import { logger } from './logger.service'
+import loggerService from './logger.service'
 
 let dbConn: Db | null = null
 
@@ -10,9 +10,9 @@ export async function connectToDb(): Promise<void> {
   try {
     const client = await MongoClient.connect(config.dbURL)
     dbConn = client.db(config.dbName)
-    logger.info('✅ Connected to MongoDB:', config.dbName)
+    loggerService.info('✅ Connected to MongoDB:', config.dbName)
   } catch (err) {
-    logger.error('❌ Cannot connect to DB', err)
+    loggerService.error('❌ Cannot connect to DB', err)
     throw err
   }
 }

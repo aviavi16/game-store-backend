@@ -1,7 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
-import { logger } from './services/logger.service'
+import loggerService from './services/logger.service'
 import { connectToDb } from './services/db.service'
 import { gameRoutes } from './api/game/game.routes'
 
@@ -32,10 +32,10 @@ async function startServer() {
   try {
     await connectToDb()
     app.listen(PORT, () => {
-      logger.info(`🚀 Server is running on http://localhost:${PORT}`)
+      loggerService.info(`🚀 Server is running on http://localhost:${PORT}`)
     })
   } catch (err) {
-    logger.error('❌ Failed to start server:', err)
+    loggerService.error('❌ Failed to start server:', err)
   }
 }
 

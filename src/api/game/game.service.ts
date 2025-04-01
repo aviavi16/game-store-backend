@@ -1,7 +1,7 @@
 import { getCollection } from '../../services/db.service'
-import { generateDescription } from '../../services/openai.service'
-import { fetchImageUrl } from '../../services/image.service'
-import { logger } from '../../services/logger.service'
+import { fetchImageUrl } from '../../services/fetchImageUrl'
+import loggerService from '../../services/logger.service'
+import { fetchBggGameData } from '../../services/bgg.service'
 
 export const gameService = {
   importGame,
@@ -9,21 +9,23 @@ export const gameService = {
   getGamesFromDate,
 }
 
-async function importGame(name: string) {
+export async function importGame(name: string) {
   let description = ''
   let source = 'ai-generated'
 
+  const imageUrl = await fetchImageUrl(name)
+  let bggData = null
   try {
-    description = await generateDescription(name)
+    bggData = await fetchBggGameData(name)
+    if (bggData) {
+      loggerService.info(`🎲 Fetched BGG data for "${name}"`)
+    } else {
+      loggerService.warn(`⚠️ No BGG data found for "${name}"`)
+    }
   } catch (err) {
-    source = 'fallback_due_to_openai_quota_exceeded'
-    description = `No description available for "${name}".`
-
-    logger.warn(`⚠️ OpenAI quota exceeded – fallback description used for "${name}"`)
-    console.warn(`⚠️ Used fallback for "${name}" due to OpenAI quota limit`)
+    loggerService.error(`❌ Failed to fetch BGG data for "${name}"`, err)
   }
 
-  const imageUrl = await fetchImageUrl(name)
 
   const now = new Date()
   const createdAt = now.toLocaleString('en-GB', {
@@ -33,7 +35,7 @@ async function importGame(name: string) {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
-  }) // תוצאה לדוגמה: "30/03/2025, 13:45"
+  })
 
   const gameToSave = {
     name,
@@ -43,10 +45,18 @@ async function importGame(name: string) {
     source,
     createdAt,
     createdAtTimestamp: now.getTime(),
+    // 🔍 BGG metadata
+    bgg: bggData || null,
   }
 
-  const collection = await getCollection('game')
-  await collection.insertOne(gameToSave)
+  try {
+    const collection = await getCollection('game')
+    await collection.insertOne(gameToSave)
+    loggerService.info(`✅ Saved game "${name}" to database`)
+  } catch (err) {
+    loggerService.error(`❌ Failed to save game "${name}" to database`, err)
+    throw err
+  }
 
   return gameToSave
 }

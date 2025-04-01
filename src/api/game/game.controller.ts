@@ -1,6 +1,6 @@
 import { RequestHandler } from 'express'
 import { gameService } from './game.service'
-import { logger } from '../../services/logger.service'
+import loggerService from '../../services/logger.service'
 
 export const importGame: RequestHandler = async (req, res) => {
   const { name } = req.query
@@ -10,11 +10,11 @@ export const importGame: RequestHandler = async (req, res) => {
   }
 
   try {
-    logger.info(`Importing game: ${name}`)
+    loggerService.info(`Importing game: ${name}`)
     const game = await gameService.importGame(name)
     res.json(game)
   } catch (err) {
-    logger.error('❌ Failed to import game', err)
+    loggerService.error('❌ Failed to import game', err)
     res.status(500).send('Could not import game')
   }
 }
@@ -24,7 +24,7 @@ export const getAllGames: RequestHandler = async (req, res) => {
     const games = await gameService.getAllGames()
     res.json(games)
   } catch (err) {
-    logger.error('❌ Failed to get games', err)
+    loggerService.error('❌ Failed to get games', err)
     res.status(500).send('Could not fetch games')
   }
 }
@@ -43,15 +43,15 @@ export const getGamesFromDate: RequestHandler = async (req, res) => {
     const games = await gameService.getGamesFromDate(fromDate, includeMissingBool)
 
     if (!games.length) {
-      logger.warn(`⚠️ No games found from date: ${fromDate}`)
+      loggerService.warn(`⚠️ No games found from date: ${fromDate}`)
       console.warn(`⚠️ No games found from date: ${fromDate}`)
     } else {
-      logger.info(`📄 ${games.length} games found from ${fromDate}`)
+      loggerService.info(`📄 ${games.length} games found from ${fromDate}`)
     }
 
     res.json(games)
   } catch (err) {
-    logger.error('❌ Failed to fetch games by date', err)
+    loggerService.error('❌ Failed to fetch games by date', err)
     res.status(500).send('Could not fetch games')
   }
 }
