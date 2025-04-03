@@ -3,6 +3,7 @@ import { fetchImageUrl } from '../../services/fetchImageUrl'
 import loggerService from '../../services/logger.service'
 import { fetchBggGameData } from '../../services/bgg.service'
 import { fetchPhilibertImage } from '../../services/philibert.service'
+import { fetchAmazonPrice } from '../../services/priceCompare.service'
 
 export const gameService = {
   importGame,
@@ -46,7 +47,18 @@ export async function importGame(name: string) {
     loggerService.error(`❌ Failed to fetch BGG data for "${name}"`, err)
   }
 
-
+  let amazonPrice: number | null = null
+  try {
+    amazonPrice = await fetchAmazonPrice(name)
+    if (amazonPrice !== null) {
+      loggerService.info(`💰 Fetched Amazon price for "${name}": $${amazonPrice}`)
+    } else {
+      loggerService.warn(`⚠️ No Amazon price found for "${name}"`)
+    }
+  } catch (err) {
+    loggerService.error(`❌ Failed to fetch Amazon price for "${name}"`, err)
+  }
+  
   const now = new Date()
   const createdAt = now.toLocaleString('en-GB', {
     year: 'numeric',
@@ -66,6 +78,7 @@ export async function importGame(name: string) {
     source,
     createdAt,
     createdAtTimestamp: now.getTime(),
+    amazonPrice,
     // 🔍 BGG metadata
     bgg: bggData || null,
   }

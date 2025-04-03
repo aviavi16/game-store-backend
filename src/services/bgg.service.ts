@@ -78,3 +78,18 @@ export async function fetchBggGameData(gameName: string): Promise<BggGameData | 
     return null
   }
 }
+
+export async function fetchHotBoardGameNames(): Promise<{ name: string, bggId: string }[]> {
+  const url = 'https://boardgamegeek.com/xmlapi2/hot?type=boardgame'
+
+  const res = await axios.get(url)
+  const parsed = await parseStringPromise(res.data)
+
+  const hotItems = parsed.items?.item || []
+
+  return hotItems.map((item: any) => ({
+    name: item.name?.[0]?.$.value || '',
+    bggId: item.$.id,
+  }))
+}
+
