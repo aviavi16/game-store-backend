@@ -30,6 +30,6 @@
     "dev": "ts-node src/server.ts",
     "test": "vitest",
     "build": "tsc",
-    "start": "ts-node scripts/install-playwright.ts && node dist/server.js"
+    "start": "npx playwright install && node dist/server.js"
   }
 }
