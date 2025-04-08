@@ -1,62 +1,44 @@
-import puppeteer from 'puppeteer-extra'
-import StealthPlugin from 'puppeteer-extra-plugin-stealth'
+import { chromium } from 'playwright'
 import logger from './logger.service'
 
-puppeteer.use(StealthPlugin())
-
-const PHILIBERT_BASE_URL = 'https://www.philibertnet.com/en/search?search_query='
-
-export async function fetchPhilibertImageWithPuppeteer(gameName: string): Promise<string | null> {
-  const searchUrl = `${PHILIBERT_BASE_URL}${encodeURIComponent(gameName)}`
-  logger.info(`🕵️‍♂️ [Puppeteer] Starting image scrape for "${gameName}" on Philibert`)
+export async function fetchPhilibertImageWithPlaywright(gameName: string): Promise<string | null> {
+  const searchUrl = `https://www.philibertnet.com/en/search?search_query=${encodeURIComponent(gameName)}`
+  logger.info(`🎯 [Playwright] Starting image scrape for "${gameName}"`)
 
   let browser
   try {
-    browser = await puppeteer.launch({
-      headless: true,      
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    })
-
+    browser = await chromium.launch({ headless: true })
     const page = await browser.newPage()
 
-    // Memory monitoring
-    const memCheckInterval = setInterval(async () => {
-      const metrics = await page.metrics()
-      const heapSize = metrics.JSHeapUsedSize
+    logger.info(`🌍 Navigating to: ${searchUrl}`)
+    await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 15000 })
 
-      if (heapSize && heapSize > 100 * 1024 * 1024) {
-        logger.warn(`⚠️ High memory usage: ${Math.round(heapSize / 1024 / 1024)} MB`)
-      }
-    }, 1000)
-
-    logger.info(`🌍 Navigating to search page: ${searchUrl}`)
-    await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 20000 })
-
-    const productLink = await page.$eval('.product_img_link', (el) => (el as HTMLAnchorElement).href).catch(() => null)
-    if (!productLink) {
-      logger.warn(`❌ No product link found for "${gameName}"`)
+    const firstProductLink = await page.getAttribute('.product_img_link', 'href')
+    if (!firstProductLink) {
+      logger.warn(`⚠️ No product link found for "${gameName}"`)
       return null
     }
 
-    logger.info(`🔗 Navigating to product page: ${productLink}`)
-    await page.goto(productLink, { waitUntil: 'domcontentloaded', timeout: 20000 })
+    const productUrl = firstProductLink.startsWith('http') ? firstProductLink : `https://www.philibertnet.com${firstProductLink}`
+    logger.info(`🔗 Found product page: ${productUrl}`)
 
-    const imageUrl = await page.$eval('#bigpic', (img) => (img as HTMLImageElement).src).catch(() => null)
+    await page.goto(productUrl, { waitUntil: 'domcontentloaded', timeout: 15000 })
+
+    const imageUrl = await page.getAttribute('#bigpic', 'src')
     if (imageUrl) {
-      logger.info(`✅ [Puppeteer] Found image for "${gameName}": ${imageUrl}`)
+      const fullUrl = imageUrl.startsWith('http') ? imageUrl : `https:${imageUrl}`
+      logger.info(`✅ [Playwright] Found image for "${gameName}": ${fullUrl}`)
+      return fullUrl
     } else {
-      logger.warn(`⚠️ [Puppeteer] No image found on product page for "${gameName}"`)
+      logger.warn(`⚠️ No image found on product page for "${gameName}"`)
+      return null
     }
-
-    return imageUrl || null
   } catch (err: any) {
-    logger.error(`🚨 [Puppeteer] Error while scraping Philibert for "${gameName}"`, {
-      message: err.message,
-    })
+    logger.error(`❌ [Playwright] Error fetching Philibert image for "${gameName}"`, { message: err.message })
     return null
   } finally {
     if (browser) {
-      logger.info(`🧹 [Puppeteer] Closing browser for "${gameName}"`)
+      logger.info(`🧹 [Playwright] Closing browser`)
       await browser.close()
     }
   }
