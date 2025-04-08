@@ -28,9 +28,8 @@
   },
   "scripts": {
     "dev": "ts-node src/server.ts",
-    "build": "tsc",
     "test": "vitest",
-    "postinstall": "npx playwright install --with-deps",
-    "start": "node dist/server.js"
+    "build": "tsc",
+    "start": "ts-node scripts/install-playwright.ts && node dist/server.js"
   }
 }
