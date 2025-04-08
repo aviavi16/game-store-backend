@@ -2,7 +2,6 @@ import { getCollection } from '../../services/db.service'
 import { fetchImageUrl } from '../../services/fetchImageUrl'
 import loggerService from '../../services/logger.service'
 import { fetchBggGameData } from '../../services/bgg.service'
-import { fetchPhilibertImageWithPlaywright } from '../../services/philibert.service'
 import { fetchAmazonPrice } from '../../services/priceCompare.service'
 import { timeoutPromise } from '../../utils/timeoutPromise' // adjust path as needed
 
@@ -16,7 +15,7 @@ export const gameService = {
 export async function importGame(name: string) {
   let description = ''
   let source = 'ai-generated'
-  const fallbackImage = await fetchPhilibertImageWithPlaywright(name)
+  const fallbackImage = null //await fetchPhilibertImageWithPlaywright(name) moving to a different service
   if (fallbackImage) {
     loggerService.info(`🛍️ Philibert image used for "${name}": ${fallbackImage}`)
   } else {

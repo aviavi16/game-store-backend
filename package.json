@@ -9,7 +9,6 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.15.0",
     "openai": "^4.90.0",
-    "playwright": "^1.51.1",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
@@ -30,6 +29,6 @@
     "dev": "ts-node src/server.ts",
     "test": "vitest",
     "build": "tsc",
-    "start": "npx playwright install && node dist/server.js"
+    "start": "node dist/server.js"
   }
 }
