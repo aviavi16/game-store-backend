@@ -32,6 +32,7 @@
     "dev": "ts-node src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "vitest"
+    "test": "vitest",
+    "postinstall": "npx puppeteer install"
   }
 }
