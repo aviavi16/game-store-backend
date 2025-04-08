@@ -10,9 +10,6 @@
     "mongodb": "^6.15.0",
     "openai": "^4.90.0",
     "playwright": "^1.51.1",
-    "puppeteer": "^24.6.0",
-    "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
@@ -32,7 +29,8 @@
   "scripts": {
     "dev": "ts-node src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
-    "test": "vitest"
+    "test": "vitest",
+    "postinstall": "npx playwright install --with-deps",
+    "start": "node dist/server.js"
   }
 }
