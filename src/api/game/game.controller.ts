@@ -19,6 +19,25 @@ export const importGame: RequestHandler = async (req, res) => {
   }
 }
 
+export const importBulkGames: RequestHandler = async (req, res) => {
+  const { names } = req.body
+
+  if (!Array.isArray(names) || names.length === 0) {
+    res.status(400).send('Array of game names is required')
+    return
+  }
+
+  loggerService.info(`🧩 Starting bulk import of ${names.length} games`)
+
+  try {
+    const results = await gameService.importBulkGames(names)
+    res.json(results)
+  } catch (err) {
+    loggerService.error('❌ Bulk import failed', err)
+    res.status(500).send('Bulk import failed')
+  }
+}
+
 export const getAllGames: RequestHandler = async (req, res) => {
   try {
     const games = await gameService.getAllGames()

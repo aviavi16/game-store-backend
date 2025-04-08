@@ -4,9 +4,11 @@ import loggerService from '../../services/logger.service'
 import { fetchBggGameData } from '../../services/bgg.service'
 import { fetchPhilibertImage } from '../../services/philibert.service'
 import { fetchAmazonPrice } from '../../services/priceCompare.service'
+import { timeoutPromise } from '../../utils/timeoutPromise' // adjust path as needed
 
 export const gameService = {
   importGame,
+  importBulkGames,
   getAllGames,
   getGamesFromDate,
 }
@@ -93,6 +95,32 @@ export async function importGame(name: string) {
   }
 
   return gameToSave
+}
+
+async function importBulkGames(names: string[]) {
+  const importedGames: { name: string; status: string; game: any }[] = []
+  const failedGames: { name: string; status: string; error: string }[] = []
+
+  const gameImportPromises = names.map(async (name) => {
+    try {
+      loggerService.info(`Importing game "${name}"`)
+      const game = await timeoutPromise(importGame(name), 15000, name)
+      loggerService.info(`✅ Successfully imported "${name}"`)
+      importedGames.push({ name, status: 'success', game })
+    } catch (err: any) {
+      const errorMsg = err instanceof Error ? err.message : String(err)
+      loggerService.error(`❌ Failed to import "${name}": ${errorMsg}`)
+      failedGames.push({ name, status: 'failed', error: errorMsg })
+    }
+  })
+
+  await Promise.allSettled(gameImportPromises)
+
+  loggerService.info(
+    `Bulk import completed: ${importedGames.length} success, ${failedGames.length} failed.`
+  )
+
+  return { importedGames, failedGames }
 }
 
 async function getAllGames() {
