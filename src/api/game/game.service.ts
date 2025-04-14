@@ -4,6 +4,7 @@ import loggerService from '../../services/logger.service'
 import { fetchBggGameData } from '../../services/bgg.service'
 import { fetchAmazonPrice } from '../../services/priceCompare.service'
 import { timeoutPromise } from '../../utils/timeoutPromise' // adjust path as needed
+import { getPhilibertImageUrl } from '../../services/philibert.service'
 
 export const gameService = {
   importGame,
@@ -15,7 +16,7 @@ export const gameService = {
 export async function importGame(name: string) {
   let description = ''
   let source = 'ai-generated'
-  const fallbackImage = null //await fetchPhilibertImageWithPlaywright(name) moving to a different service
+  const fallbackImage = await getPhilibertImageUrl(name)
   if (fallbackImage) {
     loggerService.info(`🛍️ Philibert image used for "${name}": ${fallbackImage}`)
   } else {
@@ -48,17 +49,17 @@ export async function importGame(name: string) {
     loggerService.error(`❌ Failed to fetch BGG data for "${name}"`, err)
   }
 
-  let amazonPrice: number | null = null
-  try {
-    amazonPrice = await fetchAmazonPrice(name)
-    if (amazonPrice !== null) {
-      loggerService.info(`💰 Fetched Amazon price for "${name}": $${amazonPrice}`)
-    } else {
-      loggerService.warn(`⚠️ No Amazon price found for "${name}"`)
-    }
-  } catch (err) {
-    loggerService.error(`❌ Failed to fetch Amazon price for "${name}"`, err)
-  }
+  // let amazonPrice: number | null = null
+  // try {
+  //   amazonPrice = await fetchAmazonPrice(name)
+  //   if (amazonPrice !== null) {
+  //     loggerService.info(`💰 Fetched Amazon price for "${name}": $${amazonPrice}`)
+  //   } else {
+  //     loggerService.warn(`⚠️ No Amazon price found for "${name}"`)
+  //   }
+  // } catch (err) {
+  //   loggerService.error(`❌ Failed to fetch Amazon price for "${name}"`, err)
+  // }
   
   const now = new Date()
   const createdAt = now.toLocaleString('en-GB', {
@@ -79,7 +80,7 @@ export async function importGame(name: string) {
     source,
     createdAt,
     createdAtTimestamp: now.getTime(),
-    amazonPrice,
+    //amazonPrice,
     // 🔍 BGG metadata
     bgg: bggData || null,
   }
