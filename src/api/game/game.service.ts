@@ -16,19 +16,33 @@ export const gameService = {
 export async function importGame(name: string) {
   let description = ''
   let source = 'ai-generated'
-  const fallbackImage = await getPhilibertImageUrl(name)
-  if (fallbackImage) {
-    loggerService.info(`🛍️ Philibert image used for "${name}": ${fallbackImage}`)
-  } else {
-    loggerService.warn(`⚠️ No Philibert image found for "${name}"`)
+  let fallbackImage: string | null = null
+  try {
+    fallbackImage = await getPhilibertImageUrl(name)
+    if (fallbackImage) {
+      loggerService.info(`🛍️ Philibert image used for "${name}": ${fallbackImage}`)
+    } else {
+      loggerService.warn(`⚠️ No Philibert image found for "${name}"`)
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    loggerService.error(`❌ Error while fetching Philibert image for "${name}": ${message}`)
   }
   
-  const googleImage = await fetchImageUrl(name)
-  if (googleImage) {
-    loggerService.info(`📸 Google image used for "${name}": ${googleImage}`)
-  } else {
-    loggerService.warn(`⚠️ No Google image found for "${name}"`)
+  
+  let googleImage: string | null = null
+  try {
+    googleImage = await fetchImageUrl(name)
+    if (googleImage) {
+      loggerService.info(`📸 Google image used for "${name}": ${googleImage}`)
+    } else {
+      loggerService.warn(`⚠️ No Google image found for "${name}"`)
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    loggerService.error(`❌ Error while fetching Google image for "${name}": ${message}`)
   }
+  
 
   const imageUrl = fallbackImage || googleImage
 
