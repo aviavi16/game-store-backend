@@ -20,6 +20,8 @@ export async function importGame(name: string) {
   let fallbackImage: string | null = null
   try {
     fallbackImage = await getPhilibertImageUrl(name)
+    console.log(`🐞 Debug: Received fallbackImage:`, fallbackImage);
+    loggerService.debug("test", fallbackImage)
     if (fallbackImage) {
       loggerService.info(`🛍️ Philibert image used for "${name}": ${fallbackImage}`)
     } else {
@@ -44,6 +46,7 @@ export async function importGame(name: string) {
     loggerService.error(`❌ Error while fetching Google image for "${name}": ${message}`)
   }
   
+  console.log(`🐞 Debug: Received fallbackImage:`, fallbackImage);
 
   const imageUrl = fallbackImage || googleImage
 
