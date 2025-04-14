@@ -75,4 +75,27 @@ export const getGamesFromDate: RequestHandler = async (req, res) => {
   }
 }
 
+export const removeGame: RequestHandler = async (req, res) => {
+  const { name } = req.query
+  if (!name || typeof name !== 'string') {
+    res.status(400).send('Game name is required for deletion')
+    return
+  }
+
+  try {
+    const result = await gameService.removeGame(name)
+    if (result.deletedCount === 0) {
+      loggerService.warn(`⚠️ No game found to delete: "${name}"`)
+      res.status(404).send('Game not found')
+      return
+    }
+
+    loggerService.info(`🗑️ Deleted game: "${name}"`)
+    res.json({ message: `Game "${name}" deleted` })
+  } catch (err) {
+    loggerService.error(`❌ Failed to delete game: "${name}"`, err)
+    res.status(500).send('Failed to delete game')
+  }
+}
+
 

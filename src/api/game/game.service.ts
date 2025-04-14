@@ -11,6 +11,7 @@ export const gameService = {
   importBulkGames,
   getAllGames,
   getGamesFromDate,
+  removeGame,
 }
 
 export async function importGame(name: string) {
@@ -162,4 +163,10 @@ async function getAllGames() {
   
     const games = await collection.find(query).toArray()
     return games
+  }
+
+  export async function removeGame(name: string) {
+    const collection = await getCollection('game')
+    const result = await collection.deleteOne({ name })
+    return result
   }
