@@ -1,5 +1,5 @@
 import { RequestHandler } from 'express'
-import { gameService } from './game.service'
+import { gameService, importHotGames  } from './game.service'
 import loggerService from '../../services/logger.service'
 
 export const importGame: RequestHandler = async (req, res) => {
@@ -96,6 +96,16 @@ export const removeGame: RequestHandler = async (req, res) => {
   } catch (err) {
     loggerService.error(`❌ Failed to delete game: "${name}"`, err)
     res.status(500).send('Failed to delete game')
+  }
+}
+
+export const importHotGamesController: RequestHandler = async (_req, res) => {
+  try {
+    const result = await importHotGames()
+    res.json(result)
+  } catch (err) {
+    loggerService.error('❌ Failed to import hot games', err)
+    res.status(500).send('Import failed')
   }
 }
 

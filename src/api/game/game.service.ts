@@ -5,6 +5,7 @@ import { fetchBggGameData } from '../../services/bgg.service'
 import { fetchAmazonPrice } from '../../services/priceCompare.service'
 import { timeoutPromise } from '../../utils/timeoutPromise' // adjust path as needed
 import { getPhilibertImageUrl } from '../../services/philibert.service'
+import { fetchHotBoardGameNames } from '../../services/bgg.service'
 
 export const gameService = {
   importGame,
@@ -12,6 +13,7 @@ export const gameService = {
   getAllGames,
   getGamesFromDate,
   removeGame,
+  importHotGames,
 }
 
 export async function importGame(name: string) {
@@ -137,6 +139,47 @@ async function importBulkGames(names: string[]) {
 
   loggerService.info(
     `Bulk import completed: ${importedGames.length} success, ${failedGames.length} failed.`
+  )
+
+  return { importedGames, failedGames }
+}
+
+export async function importHotGames() {
+  loggerService.info('🔥 Fetching hot games from BGG...')
+  const hotGames = await fetchHotBoardGameNames()
+  const names = hotGames.map((game) => game.name).slice(0, 50)
+
+  loggerService.info(`🧩 Importing ${names.length} hot games in batches of 5...`)
+
+  const batchSize = 5
+  const importedGames: { name: string; status: string; game: any }[] = []
+  const failedGames: { name: string; status: string; error: string }[] = []
+
+  // 🔁 process batches sequentially
+  for (let i = 0; i < names.length; i += batchSize) {
+    const batch = names.slice(i, i + batchSize)
+    loggerService.info(`🚚 Processing batch ${i + 1} to ${i + batch.length}`)
+
+    const results = await Promise.allSettled(
+      batch.map(async (name) => {
+        try {
+          loggerService.info(`Importing game "${name}"`)
+          const game = await timeoutPromise(importGame(name), 90000, name) // ⏱️ 90 שניות
+          loggerService.info(`✅ Successfully imported "${name}"`)
+          importedGames.push({ name, status: 'success', game })
+        } catch (err: any) {
+          const errorMsg = err instanceof Error ? err.message : String(err)
+          loggerService.error(`❌ Failed to import "${name}": ${errorMsg}`)
+          failedGames.push({ name, status: 'failed', error: errorMsg })
+        }
+      })
+    )
+
+    loggerService.info(`✅ Batch completed (${i + 1} to ${i + batch.length})`)
+  }
+
+  loggerService.info(
+    `📦 Bulk import finished: ${importedGames.length} succeeded, ${failedGames.length} failed.`
   )
 
   return { importedGames, failedGames }

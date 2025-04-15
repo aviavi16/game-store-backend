@@ -1,13 +1,17 @@
-// src/utils/timeoutPromise.ts
-export function timeoutPromise<T>(promise: Promise<T>, timeoutMs: number, gameName: string): Promise<T> {
-    return Promise.race([
-      promise,
-      new Promise<T>((_, reject) =>
-        setTimeout(
-          () => reject(new Error(`Timeout importing game "${gameName}" after ${timeoutMs}ms`)),
-          timeoutMs
-        )
-      ),
-    ])
-  }
-  
+export function timeoutPromise<T>(promise: Promise<T>, ms: number, label = ''): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`Timeout importing game "${label}" after ${ms}ms`))
+    }, ms)
+
+    promise
+      .then((res) => {
+        clearTimeout(timer)
+        resolve(res)
+      })
+      .catch((err) => {
+        clearTimeout(timer)
+        reject(err)
+      })
+  })
+}
