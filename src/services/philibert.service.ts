@@ -1,11 +1,20 @@
 import axios from 'axios'
 
 export async function getPhilibertImageUrl(gameName: string): Promise<string | null> {
-  const url = `https://philibert-scraper-crimson-firefly-6600.fly.dev/scrape?name=${encodeURIComponent(gameName)}`
+  const base = 'https://philibert-scraper-crimson-firefly-6600.fly.dev'
+  const url = `${base}/scrape?name=${encodeURIComponent(gameName)}`
+
   console.log(`🌐 Sending request to Fly scraper for "${gameName}" → ${url}`)
 
   try {
-    const res = await axios.get(url, { timeout: 10000 })
+    // 🌞 שלב 1: פינג להתעוררות
+    console.log(`🌞 Sending wake-up ping to Fly scraper...`)
+    await axios.get(`${base}/ping`, { timeout: 5000 })
+    console.log(`✅ Ping successful! Waiting for machine to warm up...`)
+    await new Promise(resolve => setTimeout(resolve, 1500)) // 1.5 שניות להבטיח מוכנות
+
+    // 🧠 שלב 2: קריאה אמיתית
+    const res = await axios.get(url, { timeout: 20000 })
 
     if (res.data && res.data.imageUrl) {
       console.log(`✅ Fly scraper returned image URL for "${gameName}": ${res.data.imageUrl}`)
