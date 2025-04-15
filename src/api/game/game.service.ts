@@ -15,6 +15,7 @@ export const gameService = {
 }
 
 export async function importGame(name: string) {
+  console.log('🧩 Entered importGame service for:', name);
   let description = ''
   let source = 'ai-generated'
   let fallbackImage: string | null = null

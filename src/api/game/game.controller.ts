@@ -3,6 +3,7 @@ import { gameService } from './game.service'
 import loggerService from '../../services/logger.service'
 
 export const importGame: RequestHandler = async (req, res) => {
+  console.log('📥 Received import request for:', req.query.name); 
   const { name } = req.query
   if (!name || typeof name !== 'string') {
     res.status(400).send('Game name is required')
