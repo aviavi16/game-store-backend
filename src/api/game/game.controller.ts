@@ -99,13 +99,18 @@ export const removeGame: RequestHandler = async (req, res) => {
   }
 }
 
-export const importHotGamesController: RequestHandler = async (_req, res) => {
+export const importHotGamesController: RequestHandler = async (req, res) => {
+  loggerService.info('🔁 POST /api/game/import-hot → CRUD action triggered')
+
+  const { limit } = req.query
+  const parsedLimit = Number(limit) || 10 
   try {
-    const result = await importHotGames()
+    loggerService.info(`🔥 Fetching hot games from BGG with limit ${parsedLimit}`)
+    const result = await gameService.importHotGames(parsedLimit)
     res.json(result)
   } catch (err) {
     loggerService.error('❌ Failed to import hot games', err)
-    res.status(500).send('Import failed')
+    res.status(500).send('Error importing hot games')
   }
 }
 

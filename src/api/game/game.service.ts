@@ -144,43 +144,34 @@ async function importBulkGames(names: string[]) {
   return { importedGames, failedGames }
 }
 
-export async function importHotGames() {
-  loggerService.info('🔥 Fetching hot games from BGG...')
+export async function importHotGames(limit: number = 10) {
   const hotGames = await fetchHotBoardGameNames()
-  const names = hotGames.map((game) => game.name).slice(0, 50)
+  const selectedGames = hotGames.slice(0, limit).map(g => g.name)
 
-  loggerService.info(`🧩 Importing ${names.length} hot games in batches of 5...`)
+  const importedGames: any[] = []
+  const failedGames: any[] = []
 
-  const batchSize = 5
-  const importedGames: { name: string; status: string; game: any }[] = []
-  const failedGames: { name: string; status: string; error: string }[] = []
+  const BATCH_SIZE = 5
+  const TIMEOUT_MS = 90000
 
-  // 🔁 process batches sequentially
-  for (let i = 0; i < names.length; i += batchSize) {
-    const batch = names.slice(i, i + batchSize)
-    loggerService.info(`🚚 Processing batch ${i + 1} to ${i + batch.length}`)
+  for (let i = 0; i < selectedGames.length; i += BATCH_SIZE) {
+    const batch = selectedGames.slice(i, i + BATCH_SIZE)
+    console.log(`📦 Importing batch:`, batch)
 
-    const results = await Promise.allSettled(
-      batch.map(async (name) => {
-        try {
-          loggerService.info(`Importing game "${name}"`)
-          const game = await timeoutPromise(importGame(name), 90000, name) // ⏱️ 90 שניות
-          loggerService.info(`✅ Successfully imported "${name}"`)
+    const promises = batch.map(name =>
+      timeoutPromise(importGame(name), TIMEOUT_MS, name)
+        .then(game => {
+          console.log(`✅ Imported ${name}`)
           importedGames.push({ name, status: 'success', game })
-        } catch (err: any) {
-          const errorMsg = err instanceof Error ? err.message : String(err)
-          loggerService.error(`❌ Failed to import "${name}": ${errorMsg}`)
-          failedGames.push({ name, status: 'failed', error: errorMsg })
-        }
-      })
+        })
+        .catch(err => {
+          console.error(`❌ Failed to import "${name}":`, err.message)
+          failedGames.push({ name, status: 'failed', error: err.message })
+        })
     )
 
-    loggerService.info(`✅ Batch completed (${i + 1} to ${i + batch.length})`)
+    await Promise.allSettled(promises)
   }
-
-  loggerService.info(
-    `📦 Bulk import finished: ${importedGames.length} succeeded, ${failedGames.length} failed.`
-  )
 
   return { importedGames, failedGames }
 }
