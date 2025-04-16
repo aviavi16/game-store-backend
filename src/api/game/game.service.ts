@@ -148,32 +148,57 @@ export async function importHotGames(limit: number = 10) {
   const hotGames = await fetchHotBoardGameNames()
   const selectedGames = hotGames.slice(0, limit).map(g => g.name)
 
-  const importedGames: any[] = []
-  const failedGames: any[] = []
+  const allResults: {
+    name: string
+    status: 'in-progress' | 'success' | 'failed'
+    durationMs?: number
+    game?: any
+    error?: string
+  }[] = selectedGames.map(name => ({ name, status: 'in-progress' }))
 
-  const BATCH_SIZE = 5
+  const BATCH_SIZE = 3
   const TIMEOUT_MS = 90000
 
   for (let i = 0; i < selectedGames.length; i += BATCH_SIZE) {
     const batch = selectedGames.slice(i, i + BATCH_SIZE)
     console.log(`📦 Importing batch:`, batch)
 
-    const promises = batch.map(name =>
-      timeoutPromise(importGame(name), TIMEOUT_MS, name)
-        .then(game => {
-          console.log(`✅ Imported ${name}`)
-          importedGames.push({ name, status: 'success', game })
-        })
-        .catch(err => {
-          console.error(`❌ Failed to import "${name}":`, err.message)
-          failedGames.push({ name, status: 'failed', error: err.message })
-        })
-    )
+    const promises = batch.map(async (name) => {
+      const start = Date.now()
+      try {
+        const game = await timeoutPromise(importGame(name), TIMEOUT_MS, name)
+        const duration = Date.now() - start
+
+        const index = allResults.findIndex(g => g.name === name)
+        allResults[index] = {
+          name,
+          status: 'success',
+          durationMs: duration,
+          game
+        }
+
+        console.log(`✅ Imported "${name}" in ${duration}ms`)
+      } catch (err: any) {
+        const duration = Date.now() - start
+        const index = allResults.findIndex(g => g.name === name)
+        allResults[index] = {
+          name,
+          status: 'failed',
+          durationMs: duration,
+          error: err.message || String(err)
+        }
+
+        console.error(`❌ Failed to import "${name}" after ${duration}ms:`, err.message)
+      }
+    })
 
     await Promise.allSettled(promises)
   }
 
-  return { importedGames, failedGames }
+  const importedGames = allResults.filter(g => g.status === 'success')
+  const failedGames = allResults.filter(g => g.status === 'failed')
+
+  return { importedGames, failedGames, allResults }
 }
 
 async function getAllGames() {

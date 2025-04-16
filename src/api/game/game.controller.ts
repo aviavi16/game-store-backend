@@ -1,6 +1,8 @@
 import { RequestHandler } from 'express'
 import { gameService, importHotGames  } from './game.service'
 import loggerService from '../../services/logger.service'
+import { getCollection } from '../../services/db.service'
+import { ObjectId } from 'mongodb'
 
 export const importGame: RequestHandler = async (req, res) => {
   console.log('📥 Received import request for:', req.query.name); 
@@ -111,6 +113,26 @@ export const importHotGamesController: RequestHandler = async (req, res) => {
   } catch (err) {
     loggerService.error('❌ Failed to import hot games', err)
     res.status(500).send('Error importing hot games')
+  }
+}
+
+export const deleteGamesBulk: RequestHandler = async (req, res) => {
+  const { ids } = req.body
+  if (!Array.isArray(ids) || ids.length === 0) {
+    res.status(400).send('Array of game IDs is required')
+    return
+  }
+
+  try {
+    const collection = await getCollection('game')
+    const objectIds = ids.map(id => new ObjectId(id))
+    const result = await collection.deleteMany({ _id: { $in: objectIds } })
+
+    loggerService.info(`🗑️ Deleted ${result.deletedCount} games`)
+    res.json({ deletedCount: result.deletedCount })
+  } catch (err) {
+    loggerService.error('❌ Failed to delete games in bulk', err)
+    res.status(500).send('Bulk delete failed')
   }
 }
 
